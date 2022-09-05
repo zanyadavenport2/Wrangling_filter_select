@@ -1,0 +1,238 @@
+---
+title: "Data Wrangling - Part I"
+subtitle: "StatPREP R Workshops"
+author: "Your Name"
+output: html_document
+---
+
+## Setting things up
+
+We need to load libraries and read the data into R first.
+
+```{r setup, include=FALSE}
+# Don't forget to load your libraries
+library(tidyverse)
+library(ggplot2movies)
+library(ggformula)
+
+# This loads the data from the ggplot2movies package
+data(movies)
+```
+
+
+It's always a good idea to do some recon work first. What do the data look like? How many observations and variables do we have? What are the variable names?
+
+
+```{r}
+# View() opens the data in another window. 'head(movies)' will show the first few rows.
+#View(movies)
+
+# If the data come from a package, you can get the help documentation this way
+?movies
+
+dim(movies)     # always rows x columns
+names(movies)   # a good way to keep track of variable names for later use
+```
+
+
+## Motivation for Wrangling
+
+Now that we have a sense of our data, we can start to dig a little deeper into the details of things. One of the main reasons data wrangling is so important to statisticians and data scientists is that we often collect waaaay more data than we actually need to answer a particular question. You may want to ask the following questions:
+
+- What is the average movie rating?
+
+- What is the median budget for a movie?
+
+But after looking at all of the movies recorded here, the more precise questions might turn out to be:
+
+- What is the average rating *of movies longer than 60 minutes?*
+
+- What is the median budget *of animated films compared to documentaries?*
+
+We often find that the whole data frame is not necessary or even helpful to answer our questions. We need to simplify the data in certain ways. Since there are only two dimensions to a data frame like this, we will discuss two ways of reduction:
+
+- `filter()` to reduce the number of observations/rows
+
+- `select()` to reduce the number of variables/columns
+
+
+### Filtering - Review
+
+This one is probably the most useful verb for data wrangling. You can see from the initial data check, there are 58788 movies. Some of these are even from before 1900! Let's consider only looking into movies that were made since the "New Hollywood" era, 1965 (according to a wikipedia search). How many movies does that include?
+
+```{r}
+# Pay attention to the usage of the pipe
+movies %>%               # start with the full dataset, and then
+  filter(year >= 1965)   # give me only movies where the year is greater than or equal to 1965
+
+# Some simple practice and review for using filters
+
+# How many movies since 1965 have a run-time greater than 60 minutes?
+
+# Show all movies with more than 500 votes and an average rating of at least 9
+
+# How many PG-13 movies are in this dataset? Remember to use quotations ("") when filtering characters/strings
+
+# I want only movies with an MPAA rating over PG (there are no G movies). Hint: think about what you don't want and double check to see the filter completely worked.
+
+```
+
+
+Often there are a lot of missing values, or `NA`s, in the budget variable. This is another characteristic of real data, and one that we often need to deal with. The function, `is.na()` is useful here. `is.na()` will identify all of the missing values and evaluates automatically as a TRUE/FALSE for each row, which eliminates the need to use any logical symbols.
+
+```{r}
+movies %>%
+  filter(is.na(budget))
+
+# Alter the code above to subset all of the movies where we do have budget information.
+
+# Another, simpler way to do this specific filter is with the drop_na() function
+movies %>%
+  drop_na(budget)
+```
+
+It is also nice to save your subset data for use later in your analysis. Notice that each time we ran the code above, R just showed us the data, it did not save it anywhere. Creating a new object allows us to refer back to that filtered/selected data later.
+
+```{r}
+movies_modern <- movies %>%    # Remember that '<-' assigns a new object. Preserve your original dataset by creating a new name
+  filter(year >= 1965) %>%
+  drop_na(budget)
+
+# When running the code above, nothing seems to happen...
+# But really, you didn't ask R to show anything, just to save something
+# ask for movies_2000 to make sure it worked
+movies_modern
+```
+
+
+One more useful way to filter a character variable is to base it on part of the value, or a string subset. You can use `str_detect()` for this. To use this function, just add the variable name and words or partial word you would like to detect.
+
+- `str_detect(variable_name, "Word to filter")`
+
+```{r}
+movies %>%
+  filter(str_detect(title, "Godzilla"))
+
+# Which Batman movies are in the dataset?
+```
+
+> A note of caution: This method does not account for misentries and bad data. A mispelled word could cause an observation to escape your filter. This is only scratching the surface of what we can do with strings in R, [here is a nice chapter to get more info on handling strings](https://r4ds.had.co.nz/strings.html)
+
+
+### Select
+
+Alright, there are countless ways we can create subsets of our data to better suit our needs. Another way we can improve our data experience is by selecting only the variables (or columns) we are interested in using. For organizational and practical (which we'll demonstrate later) purposes, it's nice to simplify what we are looking at. Let's create a subset of just the movie titles, year, and ratings.
+
+```{r}
+movies %>%
+  select(title, year, rating)    # multiple argument values are separated by a comma
+```
+
+
+Notice that there are a bunch of ratings percentiles (`r1`-`r10`) that I don't really plan on using. We can still use the '!' as a logical negative here.
+
+```{r}
+movies %>%
+  select(!c(r1, r2, r3, r4, r5, r6, r7, r8, r9, r10))   # the function c() combines things and allows us to use the distributive property for '!'
+```
+
+> Advanced variable selection using partial variable names
+
+`starts_with()`, `ends_with()`, `contains()`, `matches()`, `num_range()` can all grab multiple variables at once.
+
+```{r}
+movies %>%
+  select(!starts_with("r"))      # this will select any variable that does not start with 'r'
+
+# Unfortunately that means 'ratings' is also dropped. Here's a better way:
+movies %>%
+  select(!num_range("r", 1:10))  # now we drop any variable starting with prefix 'r' and numeric suffix from 1-10 
+```
+
+
+Filtering and variable selection can happen in the same pipe. Give me the title, rating, and budget for all action movies 2000 or later, with known budget.
+
+```{r eval=FALSE}
+movies %>%
+  filter(year >= 2000 & Action == 1) %>%
+  drop_na(budget) %>%
+  select(title, rating, budget)
+
+# Why doesn't the following code work?
+movies %>%
+  select(title, rating, budget) %>%
+  filter(year >= 2000) %>%
+  drop_na(budget)
+```
+
+
+## Arrange
+
+Let's create a new data subset of action movies with a budget since 2000.
+
+
+```{r}
+movies_2000 <- movies %>%    
+  filter(year >= 2000 & Action == 1) %>%
+  drop_na(budget) %>%
+  select(title, rating, budget)
+
+movies_2000
+```
+
+You'll learn some more summarizing techniques later, but I want to show one more useful verb: `arrange()`. This function allows you to sort columns by ascending and descending order. What movies in `movies_2000` have the highest budget?
+
+```{r}
+movies_2000 %>%
+  arrange(desc(budget))          # default is to arrange in ascending order, but desc() reverses it
+
+# You can include multiple arrangements in the same function
+movies_2000 %>%
+  arrange(rating, desc(budget))  # these are the lowest rated movies arranged by largest budget
+
+# Using the original 'movies' data, what is the longest movie? What is the oldest movie?
+```
+
+
+
+## Scavenger Hunt
+
+See if you can answer these questions:
+
+1. How many movies were released in 1995?
+
+```{r}
+
+```
+
+2. Which Comedies with an MPAA rating, over 120 minutes have a rating above 8?
+
+```{r}
+
+```
+
+3. Create a subset of only Harry Potter movies with the title, rating, budget, and votes. Which movies are included in this data? Which is highest rated? Which has the most votes on imdb.com?
+
+```{r}
+
+```
+
+4. What is the highest budget for a movie that is an Animation or Comedy with at least 100 votes?
+
+```{r}
+
+```
+
+5. Is your favorite movie in the dataset? What other questions could you ask or answer using `filter()`, `select()`, and `arrange()`?
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
