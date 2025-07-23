@@ -211,7 +211,7 @@ There was 1,248 movies released in the year 1995.
 
 ```{r}
 comedy <- movies %>%
-  filter(rating >= 8  & Comedy == 1) %>%
+  filter(rating >= 8  & Comedy == 1 ) %>%
   drop_na(budget) %>%
   select(title, rating, length)
 comedy %>% filter(length >= 120)
@@ -222,19 +222,32 @@ There are 13 movies that have a rating of 8 and above that are 120 minutes or lo
 3. Create a subset of only Harry Potter movies with the title, rating, budget, and votes. Which movies are included in this data? Which is highest rated? Which has the most votes on imdb.com?
 
 ```{r}
-
+HarryPotter <- movies %>%
+  filter(str_detect(title, "Harry Potter"))
+  HarryPotter %>% select(!c(r1, r2, r3, r4, r5, r6, r7, r8, r9, r10))
+  HarryPotter %>% arrange(rating, desc(votes))  
 ```
+There are 3 movies included. Harry Potter and the Prisoner of Azkaban is the highest rated and Harry Potter and the Sorcerer's Stone is the one with the most votes.  
+
 
 4. What is the highest budget for a movie that is an Animation or Comedy with at least 100 votes?
 
 ```{r}
-
+Highest <- movies %>%
+  filter(Animation == 1 & Comedy == 1) %>%
+  drop_na(budget) %>%
+  select(title, budget, votes)
+Highest %>% filter(votes >= 100)
+Highest %>% arrange(desc(budget))  
 ```
+
+Monsters, Inc. had the highest budget for movies that were a comedy or animation and it had over 100 votes.
 
 5. Is your favorite movie in the dataset? What other questions could you ask or answer using `filter()`, `select()`, and `arrange()`?
 
 ```{r}
-
+Favorite <- movies %>%
+  filter(str_detect(title, "Scream"),Horror == 1)
 ```
 
 
