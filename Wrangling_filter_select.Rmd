@@ -247,9 +247,10 @@ Monsters, Inc. had the highest budget for movies that were a comedy or animation
 
 ```{r}
 Favorite <- movies %>%
-  filter(str_detect(title, "Scream"),Horror == 1)
+  filter(str_detect(title, "Scream"),Action == 1)
+Favorite
 ```
-
+No my favorite movie isn't in the data set but you could answer almost all your questions if you know the right code to use. 
 
 
 
