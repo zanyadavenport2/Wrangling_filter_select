@@ -202,8 +202,10 @@ See if you can answer these questions:
 1. How many movies were released in 1995?
 
 ```{r}
-
+movies1995 <-movies %>% filter(year == 1995)
+movies1995
 ```
+There was 1,248 movies released in the year 1995.
 
 2. Which Comedies with an MPAA rating, over 120 minutes have a rating above 8?
 
